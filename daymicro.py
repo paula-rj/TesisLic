@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 25 10:29:26 2021
-
-@author: Daniel
+@author: PRJure
 """
 
-
 #Librerias generales
-import os, sys
+import os
+import sys
 from scipy import interpolate
 import numpy as np
 import pprint
