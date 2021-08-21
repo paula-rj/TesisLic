@@ -6,8 +6,8 @@ Se utilizan los productos de nivel 2 CLDCLASS de CloudSat (http://www.cloudsat.c
 
 ## Relacionadas con Cloudsat:
 * Para *descargar archivos de Cloudsat*, crear un usuario y:
-* * Opción 1: Descargarlos desde la página oficial: http://www.cloudsat.cira.colostate.edu/order-data
-* * Opcion 2: Util en Windows y si no funciona la página, utilizar un programa estilo FileZilla o similar para descargar ftp
+ * Opción 1: Descargarlos desde la página oficial: http://www.cloudsat.cira.colostate.edu/order-data
+ * Opcion 2: Util en Windows y si no funciona la página, utilizar un programa estilo FileZilla o similar para descargar ftp
 * Notacion de los nombres de los archivos de Cloudsat: http://www.cloudsat.cira.colostate.edu/data-products
 * Código para graficar tipos de nubes en cada capa segun la altura vs la latitud: https://moonbooks.org/Codes/Plot-cldclass-lidar-granule-vertical-profile-using-python-3/
 * Código para  graficar tipo de nube por altura vs latitud de archivos cloudclass: https://docserver.gesdisc.eosdis.nasa.gov/public/project/MEaSUREs/Fetzer/README.AIRS_CloudSat.pdf (es un pdf, e código está al final)
