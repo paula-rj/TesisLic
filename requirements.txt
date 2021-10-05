@@ -1,7 +1,9 @@
+geopandas
+matplotlib
+netcdf
 numpy
 pandas
-matplotlib
-geopandas
-cartopy
 pyhdf
-netcdf
+pyorbital
+pyspectral
+scipy
