@@ -3,7 +3,7 @@
 """
 Created on Thu Ago 30 08:33:09 2021
 
-@author: masuelli
+@author: sergio masuelli
 
 Funciones de transformacion de coordenadas Geos a LatLon y viceversa
 con verificación basada en Pug3
@@ -117,7 +117,7 @@ def sat2latlon(
 
 
 def latlon2scan(
-    lat, lon, lon0=-75.0, Re=6378000.0, Rp=6356000.0, h=35786023.0
+    lat, lon, lon0=-75.0, Re=6378000.0, Rp=6356000.0, h=36000000.0
 ):
     """
     Transforma coordenadas de latitud/longitud a x/y en proyeccion geoestacionaria
@@ -225,27 +225,3 @@ def scan2colfil(x, y, x0, y0, scale, tipo=0):
         return round(col).astype("int"), round(fil).astype("int")
     else:
         print("error de tipo")
-
-
-# Sudamerica:
-# punto superior izquierdo: lat=10., lon=-85.
-# punto inferior derecho: lat=-55., lon=-34.
-#siz = latlon2scan(10.0, -85.0)
-#ide = latlon2scan(-55.0, -34.0)
-#print(siz[0] * 35786023.0, siz[0])
-#print(siz[1] * 35786023.0, siz[1])
-#print(ide[0] * 35786023.0, ide[0])
-#print(ide[1] * 35786023.0, ide[1])
-
-# #ds = Dataset(
-#     "/home/pola/.virtualenvs/tesis/TesisLic/data/GOES16/OR_ABI-L2-CMIPF-M3C03_G16_s20190021800363_e20190021811129_c20190021811205.nc"
-# )
-# print(
-#     ds.variables["y_image_bounds"][1] * 35786023.0,
-#     ds.variables["y_image_bounds"][1],
-# )
-#print(
-#     ds.variables["x_image_bounds"][1] * 35786023.0,
-#     ds.variables["x_image_bounds"][0],
-# )
-#  

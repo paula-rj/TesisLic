@@ -7,10 +7,10 @@ import pprint
 import time as t
 
 # Librerias geo
-# import cartopy
-# import cartopy.crs as ccrs
-# import cartopy.io.shapereader as shpreader
-# import cartopy.feature as cf
+import cartopy
+import cartopy.crs as ccrs
+import cartopy.io.shapereader as shpreader
+import cartopy.feature as cf
 
 from netCDF4 import Dataset
 
@@ -25,6 +25,8 @@ from pyspectral.near_infrared_reflectance import Calculator
 import matplotlib.pyplot as plt
 
 import latlon2geos8
+
+# %%
 
 
 class GoesClass:
@@ -49,7 +51,7 @@ class GoesClass:
         return f"GOES obj. Date: {self.gregorian_date}; {self.utc_hour} UTC "
 
     def recorte(
-        self, filas=1440, columnas=1440, x0=-555469.8930323641, y0=0.0
+        self, rows=2500, cols=2500, lat_sup=10., lon_west=-80.
     ):
 
         # lat =  0. -> y0
@@ -61,25 +63,39 @@ class GoesClass:
         ----------
         data_path: str.
         Direccion de los datos GOES.
-        filas: int.
+        rows: int.
         Cantidad de filas de pixeles (largo) que tendrá la imagen recortada
-        columnas: int.
+        cols: int.
         Cantidad de columnas de pixeles (ancho) que tendrá la imagen recortada
-        x0: float.
-        Coordenada x en sistema geoestacionario GOES del limite superior izquierdo en m.
-        y0: float.
-        Coordenada y en sistema geoestacionario GOES del limite superior izquierdo en m.
+        lon_west: float.
+        Longitud maxima al oeste del recorte
+        lat_sup: float.
+        Latitud superior del recorte.
 
         Returns
         -------
         im_rec: matriz con los elementos del recorte
 
         """
-        psize = 2000
-        N = 5424  # esc da 1
+        psize = 2000  # Tamaño del pixel en m
+        N = 5424  # Tamaño de imagen con psize=2000 m
+
         data = Dataset(self.file_path)  # Abro el archivo netcdf
         metadato = data.variables  # Extraigo todas las variables
         banda = metadato["band_id"][:].data[0]  # Extraigo el nro de banda
+        altura = metadato['goes_imager_projection'].perspective_point_height
+        semieje_may = metadato['goes_imager_projection'].semi_major_axis
+        semieje_men = metadato['goes_imager_projection'].semi_minor_axis
+        lat_cen = metadato['goes_imager_projection'].latitude_of_projection_origin
+        lon_cen = metadato['goes_imager_projection'].longitude_of_projection_origin
+        scale_factor = metadato['x'].scale_factor
+        offset = np.array([metadato['x'].add_offset, metadato['y'].add_offset])
+
+        pto_sup_izq = latlon2geos8.latlon2scan(lat_sup, lon_west, lon_cen, Re=semieje_may,
+                                               Rp=semieje_men, h=altura)
+        x0 = pto_sup_izq[1]*3600000.0
+        y0 = pto_sup_izq[0]*3600000.0
+
         # Extraigo la imagen y la guardo en un array de np
         image = np.array(metadato["CMI"][:].data)
 
@@ -97,8 +113,8 @@ class GoesClass:
         # img_extentr = [x0, x0+columnas*psize, y0 -filas*psize, y0]
 
         esc = int(N / image.shape[0])
-        Nx = int(columnas / esc)  # numero de puntos del recorte en x
-        Ny = int(filas / esc)  # numero de puntos del recorte en x
+        Nx = int(cols / esc)  # numero de puntos del recorte en x
+        Ny = int(rows / esc)  # numero de puntos del recorte en x
         f0 = int(
             (-y0 / psize + N / 2 - 1.5) / esc
         )  # fila del angulo superior izquierdo
@@ -111,11 +127,12 @@ class GoesClass:
         im_rec = image[f0:f1, c0:c1]
         return im_rec
 
-    def reflactance(self, rec07, rec13, latlon_extent=[-80, -30, -50, 0]):
+    def reflactance(self, rec07, rec13, latlon_extent=[-80, -55, -34, 10]):
         # Correccion del zenith
         lat = np.linspace(latlon_extent[3], latlon_extent[1], rec07.shape[0])
         lon = np.linspace(latlon_extent[0], latlon_extent[2], rec07.shape[1])
         zenith = np.zeros((rec07.shape[0], rec07.shape[1]))
+
         # Calculate the solar zenith angle
         utc_time = datetime(
             2019, 1, 2, int(self.utc_hour[:2]), int(self.utc_hour[2:])
@@ -129,10 +146,11 @@ class GoesClass:
             platform_name="GOES-16", instrument="abi", band="ch7"
         )
         data07b = refl39.reflectance_from_tbs(zenith, rec07, rec13)
+
         return data07b
 
     def day_microphysicsRGB(
-        self, rec03, rec07, rec13, latlon_extent=[-80, -30, -50, 0]
+        self, rec03, rec07, rec13, latlon_extent=[-80, -55, -34, 10]
     ):
         """
         Función que arma una imagen RGB que representa microfísica
@@ -267,33 +285,35 @@ def mask(rgb):
     img_mask[super_filter, 2] = 0.0
 
     return img_mask[:, :, [0, 1, 2]]
+# %%
 
 
 # Main
+main_path = "C:\\Users\\Paula\\Downloads\\GOES_L2\\2019-004\\"
 
-goes3 = GoesClass(
-    "/home/pola/.virtualenvs/tesis/TesisLic/data/GOES16/OR_ABI-L2-CMIPF-M3C03_G16_s20190021800363_e20190021811129_c20190021811205.nc"
-)
+goes3 = GoesClass(main_path +
+                  "OR_ABI-L2-CMIPF-M3C03_G16_s20190041600363_e20190041611130_c20190041611201.nc"
+                  )
 
 goes3
 
 banda3rec = goes3.recorte()
 
-goes7 = GoesClass(
-    "/home/pola/.virtualenvs/tesis/TesisLic/data/GOES16/OR_ABI-L2-CMIPF-M3C07_G16_s20190021800363_e20190021811141_c20190021811202.nc"
-)
+goes7 = GoesClass(main_path +
+                  "OR_ABI-L2-CMIPF-M3C07_G16_s20190041600363_e20190041611142_c20190041611202.nc"
+                  )
 
 
 banda7rec = goes7.recorte()
 
-goes13 = GoesClass(
-    "/home/pola/.virtualenvs/tesis/TesisLic/data/GOES16/OR_ABI-L2-CMIPF-M3C13_G16_s20190021800363_e20190021811141_c20190021811221.nc"
-)
+goes13 = GoesClass(main_path +
+                   "OR_ABI-L2-CMIPF-M3C13_G16_s20190041600363_e20190041611142_c20190041611224.nc"
+                   )
 
 
 banda13rec = goes13.recorte()
 
-banda7cor = goes7.reflactance(banda7rec, banda13rec)
+banda7cor = goes7.reflactance(banda7rec, banda13rec)  # banda 7 corregida
 
 rgb = goes3.day_microphysicsRGB(banda3rec, banda7cor, banda13rec)
 
@@ -302,22 +322,24 @@ plt.imshow(rgb)
 
 
 mascara = mask(rgb)
-# crs = ccrs.Geostationary(central_longitude=-75.0, satellite_height=35786023.0)
+
+crs = ccrs.Geostationary(central_longitude=-75.0, satellite_height=35786023.0)
 img_extentr = [
-    -1084165.3766400912,
-    2163700.9353802865,
-    -4696815.604100728,
-    1093813.66691002,
+    -5017302.234120312,  # left
+    9456653.737754004,  # right
+    -22360446.075856283,  # bottom
+    10288448.967580065,  # top
 ]
 
-# fig, axis = plt.subplots()
-# axis = plt.axes(projection=crs)
-# axis.gridlines()
-# axis.coastlines(resolution="10m", color="white")
-# axis.add_feature(cf.BORDERS)
-# axis.add_feature(cf.LAKES)
-# axis.add_feature(cf.RIVERS)
-# plt.imshow(mascara, origin="upper", extent=img_extentr)
-plt.figure()
+fig, axis = plt.subplots()
+axis = plt.axes(projection=crs)
+axis.gridlines()
+axis.coastlines(resolution="10m", color="white")
+axis.add_feature(cf.BORDERS)
+axis.add_feature(cf.LAKES)
+axis.add_feature(cf.RIVERS)
+plt.imshow(mascara, origin="upper", extent=img_extentr)
+
+plt.figure(2)
 plt.imshow(mascara)
 plt.show()
